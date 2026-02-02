@@ -40,28 +40,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _navigateToShowcase(String type) {
-    if (type == 'Camera') {
+    if (type == 'Cámara') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const CameraShowcase()),
       );
       return;
     }
-    if (type == 'Location') {
+    if (type == 'Ubicación') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const LocationShowcase()),
       );
       return;
     }
-    if (type == 'Microphone') {
+    if (type == 'Micrófono') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const AudioShowcase()),
       );
       return;
     }
-    if (type == 'Photos') {
+    if (type == 'Fotos') {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -70,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
       return;
     }
-    if (type == 'Contacts') {
+    if (type == 'Contactos') {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -80,22 +80,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    // TODO: Navigate to other showcases
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text("Opening $type demo...")));
+    ).showSnackBar(SnackBar(content: Text("Abriendo demo de $type...")));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Permission Showcase'),
+        title: const Text('Gestión de Permisos'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _controller.openSettings,
-            tooltip: 'Open App Settings',
+            tooltip: 'Configuración de la App',
           ),
         ],
       ),
@@ -103,25 +102,36 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         listenable: _controller,
         builder: (context, _) {
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             children: [
-              Text(
-                "System Permissions",
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+              // Logo Header
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20.0),
+                  child: Image.asset('assets/images/uide_logo.png', height: 80),
                 ),
+              ),
+
+              Text(
+                "Permisos del Sistema",
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.uideRed,
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               const Text(
-                "Explore how to request and handle permissions in Flutter with these interactive demos.",
+                "Demostración interactiva de permisos en Flutter para la UIDE.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppTheme.textSecondary),
               ),
               const SizedBox(height: 24),
 
               PermissionCard(
-                title: "Camera",
+                title: "Cámara",
                 description:
-                    "Required to take photos and video. Shows a live camera preview.",
+                    "Requerido para tomar fotos y video. Muestra una vista previa en tiempo real.",
                 icon: FontAwesomeIcons.camera,
                 status: _controller.getStatus(Permission.camera),
                 onTap: () => _controller.requestPermission(Permission.camera),
@@ -129,9 +139,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
 
               PermissionCard(
-                title: "Location",
+                title: "Ubicación",
                 description:
-                    "Required to display your current coordinates and speed.",
+                    "Requerido para obtener coordenadas GPS y velocidad en tiempo real.",
                 icon: FontAwesomeIcons.locationDot,
                 status: _controller.getStatus(Permission.location),
                 onTap: () => _controller.requestPermission(Permission.location),
@@ -139,9 +149,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
 
               PermissionCard(
-                title: "Microphone",
+                title: "Micrófono",
                 description:
-                    "Required to record audio and visualize sound waves.",
+                    "Requerido para grabar audio y visualizar ondas de sonido.",
                 icon: FontAwesomeIcons.microphone,
                 status: _controller.getStatus(Permission.microphone),
                 onTap: () =>
@@ -150,8 +160,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
 
               PermissionCard(
-                title: "Photos / Storage",
-                description: "Required to pick images from your gallery.",
+                title: "Fotos / Galería",
+                description:
+                    "Requerido para seleccionar imágenes de la galería.",
                 icon: FontAwesomeIcons.image,
                 status: _controller.getStatus(Permission.photos),
                 onTap: () => _controller.requestPermission(Permission.photos),
@@ -159,13 +170,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
 
               PermissionCard(
-                title: "Contacts",
+                title: "Contactos",
                 description:
-                    "Required to list your contacts directly in the app.",
+                    "Requerido para listar los contactos del dispositivo.",
                 icon: FontAwesomeIcons.addressBook,
                 status: _controller.getStatus(Permission.contacts),
                 onTap: () => _controller.requestPermission(Permission.contacts),
                 onTest: () => _navigateToShowcase('Contacts'),
+              ),
+
+              const SizedBox(height: 20),
+              Center(
+                child: Text(
+                  "Powered by UIDE - ASU",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ),
             ],
           );

@@ -29,16 +29,16 @@ class PermissionCard extends StatelessWidget {
 
     if (status.isGranted) {
       statusColor = AppTheme.success;
-      statusText = "GRANTED";
-      statusIcon = FontAwesomeIcons.check;
+      statusText = "ACTIVO";
+      statusIcon = FontAwesomeIcons.circleCheck;
     } else if (status.isPermanentlyDenied) {
       statusColor = AppTheme.error;
-      statusText = "DENIED PERMANENTLY";
-      statusIcon = FontAwesomeIcons.ban;
+      statusText = "DENEGADO (Permanente)";
+      statusIcon = FontAwesomeIcons.circleXmark;
     } else {
-      statusColor = Colors.orange;
-      statusText = "REQUEST NEEDED";
-      statusIcon = FontAwesomeIcons.exclamation;
+      statusColor = AppTheme.warning;
+      statusText = "REQUERIDO";
+      statusIcon = FontAwesomeIcons.circleExclamation;
     }
 
     return Card(
@@ -56,10 +56,10 @@ class PermissionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.background,
+                      color: AppTheme.uideRed.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: FaIcon(icon, color: AppTheme.primary, size: 24),
+                    child: FaIcon(icon, color: AppTheme.uideRed, size: 24),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -68,21 +68,27 @@ class PermissionCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          statusText,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                        Row(
+                          children: [
+                            Icon(statusIcon, color: statusColor, size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              statusText,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  Icon(statusIcon, color: statusColor),
                 ],
               ),
               const SizedBox(height: 12),
@@ -96,13 +102,16 @@ class PermissionCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
+                  child: OutlinedButton.icon(
                     onPressed: onTest,
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text("TEST FEATURE"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary.withOpacity(0.2),
-                      foregroundColor: AppTheme.primary,
+                    icon: const Icon(Icons.touch_app),
+                    label: const Text("PROBAR FUNCIONALIDAD"),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.uideRed,
+                      side: const BorderSide(color: AppTheme.uideRed),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),

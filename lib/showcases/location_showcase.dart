@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:flutter_permisos/theme/app_theme.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class LocationShowcase extends StatefulWidget {
   const LocationShowcase({super.key});
@@ -13,66 +14,9 @@ class LocationShowcase extends StatefulWidget {
 }
 
 class _LocationShowcaseState extends State<LocationShowcase> {
-  StreamSubscription<Position>? _positionStream;
   Position? _currentPosition;
   bool _isTracking = false;
-
-  void _toggleTracking() async {
-    if (_isTracking) {
-      _positionStream?.cancel();
-      setState(() => _isTracking = false);
-    } else {
-      bool serviceEnabled;
-      LocationPermission permission;
-
-      serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location services are disabled.')),
-          );
-        return;
-      }
-
-      permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location permission denied.')),
-            );
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permission denied forever.'),
-            ),
-          );
-        return;
-      }
-
-      const LocationSettings locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 0,
-      );
-
-      _positionStream =
-          Geolocator.getPositionStream(
-            locationSettings: locationSettings,
-          ).listen((Position? position) {
-            setState(() {
-              _currentPosition = position;
-            });
-          });
-
-      setState(() => _isTracking = true);
-    }
-  }
+  StreamSubscription<Position>? _positionStream;
 
   @override
   void dispose() {
@@ -80,10 +24,55 @@ class _LocationShowcaseState extends State<LocationShowcase> {
     super.dispose();
   }
 
+  void _toggleTracking() async {
+    if (_isTracking) {
+      _positionStream?.cancel();
+      setState(() => _isTracking = false);
+      return;
+    }
+
+    final status = await Permission.location.status;
+    if (!status.isGranted) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Permiso de ubicación requerido")),
+        );
+      return;
+    }
+
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Servicios de ubicación desactivados")),
+        );
+      return;
+    }
+
+    final LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.bestForNavigation,
+      distanceFilter: 0,
+    );
+
+    _positionStream =
+        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+          (Position? position) {
+            setState(() {
+              _currentPosition = position;
+            });
+          },
+          onError: (e) {
+            debugPrint("Error: $e");
+          },
+        );
+
+    setState(() => _isTracking = true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Location Showcase')),
+      appBar: AppBar(title: const Text('Ubicación en Tiempo Real')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -92,92 +81,69 @@ class _LocationShowcaseState extends State<LocationShowcase> {
             Stack(
               alignment: Alignment.center,
               children: [
-                if (_isTracking) ...[
-                  Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppTheme.primary.withOpacity(0.3),
-                            width: 2,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                      )
-                      .animate(onPlay: (c) => c.repeat())
-                      .scale(
-                        duration: 2.seconds,
-                        begin: const Offset(0.5, 0.5),
-                        end: const Offset(1.5, 1.5),
-                      )
-                      .fadeOut(duration: 2.seconds),
+                _buildRipple(150, delay: 0),
+                _buildRipple(250, delay: 1000),
+                _buildRipple(350, delay: 2000),
 
-                  Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppTheme.primary.withOpacity(0.5),
-                            width: 2,
+                Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppTheme.uideRed,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.uideRed.withOpacity(0.5),
+                            blurRadius: 20,
                           ),
-                          shape: BoxShape.circle,
-                        ),
-                      )
-                      .animate(onPlay: (c) => c.repeat(reverse: true))
-                      .scale(
-                        duration: 1.5.seconds,
-                        begin: const Offset(0.9, 0.9),
+                        ],
                       ),
-                ],
-
-                Icon(
-                      FontAwesomeIcons.locationArrow,
-                      size: 50,
-                      color: _isTracking ? AppTheme.secondary : Colors.grey,
+                      child: const Icon(
+                        FontAwesomeIcons.locationArrow,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                     )
                     .animate(target: _isTracking ? 1 : 0)
                     .shimmer(duration: 1.seconds),
               ],
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 60),
 
-            // Data Display
-            if (_currentPosition != null) ...[
-              _buildDataCard(
-                "LATITUDE",
-                _currentPosition!.latitude.toStringAsFixed(6),
-              ),
-              const SizedBox(height: 10),
-              _buildDataCard(
-                "LONGITUDE",
-                _currentPosition!.longitude.toStringAsFixed(6),
-              ),
-              const SizedBox(height: 10),
-              _buildDataCard(
-                "SPEED",
-                "${_currentPosition!.speed.toStringAsFixed(2)} m/s",
-              ),
-            ] else if (_isTracking)
-              const Text(
-                "Waiting for GPS signal...",
-                style: TextStyle(color: Colors.grey),
-              )
-            else
-              const Text(
-                "Tracking currently inactive",
-                style: TextStyle(color: Colors.grey),
-              ),
+            _buildDataCard(
+              "Latitud",
+              _currentPosition?.latitude.toStringAsFixed(6) ?? "---",
+              Icons.explore,
+            ),
+            const SizedBox(height: 12),
+            _buildDataCard(
+              "Longitud",
+              _currentPosition?.longitude.toStringAsFixed(6) ?? "---",
+              Icons.explore,
+            ),
+            const SizedBox(height: 12),
+            _buildDataCard(
+              "Velocidad",
+              "${_currentPosition?.speed.toStringAsFixed(1) ?? "0.0"} m/s",
+              Icons.speed,
+            ),
 
             const SizedBox(height: 40),
 
             ElevatedButton.icon(
               onPressed: _toggleTracking,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isTracking
+                    ? AppTheme.uideRed
+                    : AppTheme.uideGold,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
               icon: Icon(_isTracking ? Icons.stop : Icons.play_arrow),
-              label: Text(_isTracking ? "STOP TRACKING" : "START TRACKING"),
-              style: _isTracking
-                  ? ElevatedButton.styleFrom(backgroundColor: AppTheme.error)
-                  : ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+              label: Text(_isTracking ? "DETENER RASTREO" : "INICIAR RASTREO"),
             ),
           ],
         ),
@@ -185,37 +151,75 @@ class _LocationShowcaseState extends State<LocationShowcase> {
     );
   }
 
-  Widget _buildDataCard(String label, String value) {
+  Widget _buildRipple(double size, {required int delay}) {
+    if (!_isTracking) return const SizedBox.shrink();
+
     return Container(
-      width: 300,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppTheme.uideRed.withOpacity(0.3),
+              width: 2,
+            ),
+          ),
+        )
+        .animate(onPlay: (c) => c.repeat())
+        .scale(
+          begin: const Offset(0.5, 0.5),
+          end: const Offset(1, 1),
+          duration: 3.seconds,
+          delay: Duration(milliseconds: delay),
+        )
+        .fadeOut(
+          duration: 3.seconds,
+          delay: Duration(milliseconds: delay),
+        );
+  }
+
+  Widget _buildDataCard(String label, String value, IconData icon) {
+    return Container(
+      width: 250,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade100,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
-              letterSpacing: 1.5,
-              fontSize: 12,
-            ),
+          Row(
+            children: [
+              Icon(icon, size: 16, color: AppTheme.textSecondary),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
           Text(
             value,
             style: const TextStyle(
-              color: AppTheme.textPrimary,
+              fontFamily: 'Courier New', // Monospace for numbers
               fontWeight: FontWeight.bold,
-              fontSize: 18,
-              fontFamily: 'monospace',
+              color: AppTheme.textPrimary,
             ),
           ),
         ],
       ),
-    ).animate().fadeIn().slideY(begin: 0.5);
+    );
   }
 }

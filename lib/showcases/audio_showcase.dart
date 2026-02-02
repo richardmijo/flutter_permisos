@@ -1,11 +1,11 @@
-import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter_permisos/theme/app_theme.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class AudioShowcase extends StatefulWidget {
   const AudioShowcase({super.key});
@@ -15,12 +15,20 @@ class AudioShowcase extends StatefulWidget {
 }
 
 class _AudioShowcaseState extends State<AudioShowcase> {
-  final AudioRecorder _audioRecorder = AudioRecorder();
+  late final AudioRecorder _audioRecorder;
   final AudioPlayer _audioPlayer = AudioPlayer();
-
   bool _isRecording = false;
   bool _isPlaying = false;
-  String? _filePath;
+  String? _audioPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioRecorder = AudioRecorder();
+    _audioPlayer.onPlayerComplete.listen((event) {
+      if (mounted) setState(() => _isPlaying = false);
+    });
+  }
 
   @override
   void dispose() {
@@ -29,141 +37,163 @@ class _AudioShowcaseState extends State<AudioShowcase> {
     super.dispose();
   }
 
-  Future<void> _startRecording() async {
+  Future<void> _toggleRecording() async {
     try {
-      if (await _audioRecorder.hasPermission()) {
-        final directory = await getTemporaryDirectory();
-        _filePath = '${directory.path}/temp_audio.m4a';
+      if (_isRecording) {
+        final path = await _audioRecorder.stop();
+        setState(() {
+          _isRecording = false;
+          _audioPath = path;
+        });
+      } else {
+        if (await Permission.microphone.request().isGranted) {
+          final tempDir = await getTemporaryDirectory();
+          final path = '${tempDir.path}/audio_test.m4a';
 
-        // Configurar para grabar
-        await _audioRecorder.start(const RecordConfig(), path: _filePath!);
-
-        setState(() => _isRecording = true);
+          if (await _audioRecorder.hasPermission()) {
+            await _audioRecorder.start(const RecordConfig(), path: path);
+            setState(() {
+              _isRecording = true;
+              _audioPath = null;
+            });
+          }
+        }
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error: $e")));
-    }
-  }
-
-  Future<void> _stopRecording() async {
-    try {
-      final path = await _audioRecorder.stop();
-      setState(() {
-        _isRecording = false;
-        _filePath = path;
-      });
-    } catch (e) {
-      debugPrint("Stop recording error: $e");
+      debugPrint("Error grabadora: $e");
     }
   }
 
   Future<void> _playRecording() async {
     try {
-      if (_filePath != null) {
-        Source urlSource = UrlSource(_filePath!);
-        await _audioPlayer.play(urlSource);
-        setState(() => _isPlaying = true);
-
-        _audioPlayer.onPlayerComplete.listen((event) {
-          if (mounted) setState(() => _isPlaying = false);
-        });
+      if (_isPlaying) {
+        await _audioPlayer.stop();
+        setState(() => _isPlaying = false);
+      } else {
+        if (_audioPath != null) {
+          await _audioPlayer.play(DeviceFileSource(_audioPath!));
+          setState(() => _isPlaying = true);
+        }
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error playing: $e")));
+      debugPrint("Error reproductor: $e");
     }
-  }
-
-  Future<void> _stopPlayback() async {
-    await _audioPlayer.stop();
-    setState(() => _isPlaying = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Audio Showcase')),
+      appBar: AppBar(title: const Text('Grabadora de Voz')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Visualizer
-            SizedBox(
-              height: 150,
+            // Visualizer Area
+            Container(
+              height: 200,
+              width: double.infinity,
+              alignment: Alignment.center,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: List.generate(10, (index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child:
-                        AnimatedContainer(
-                              duration: Duration(
-                                milliseconds: 300 + (index * 50),
-                              ),
-                              width: 10,
-                              height: _isRecording || _isPlaying
-                                  ? (index % 2 == 0 ? 100 : 50) + (index * 5.0)
-                                  : 10,
-                              decoration: BoxDecoration(
-                                color: _isRecording
-                                    ? AppTheme.error
-                                    : AppTheme.primary,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                            )
-                            .animate(target: _isRecording || _isPlaying ? 1 : 0)
-                            .shimmer(duration: 1.seconds),
-                  );
+                  return AnimatedContainer(
+                        duration: Duration(milliseconds: 100 + (index * 50)),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: 15,
+                        height: _isRecording || _isPlaying
+                            ? (30 + (index % 5) * 20 + (index % 3) * 10)
+                                  .toDouble()
+                            : 10,
+                        decoration: BoxDecoration(
+                          color: _isRecording
+                              ? AppTheme.uideRed
+                              : AppTheme.textSecondary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      )
+                      .animate(
+                        target: _isRecording || _isPlaying ? 1 : 0,
+                        onPlay: (c) => c.repeat(reverse: true),
+                      )
+                      .scaleY(begin: 0.5, end: 1.5, duration: 600.ms);
                 }),
               ),
             ),
 
+            const SizedBox(height: 20),
+            Text(
+              _isRecording
+                  ? "Grabando..."
+                  : (_audioPath != null
+                        ? "Audio listo"
+                        : "Presiona el micro para grabar"),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+
             const SizedBox(height: 60),
 
-            // Rec Button
-            GestureDetector(
-              onTap: _isRecording ? _stopRecording : _startRecording,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _isRecording
-                      ? AppTheme.error.withOpacity(0.2)
-                      : AppTheme.surface,
-                  border: Border.all(
-                    color: _isRecording ? AppTheme.error : Colors.grey,
-                    width: 3,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Record Button
+                GestureDetector(
+                  onTap: _toggleRecording,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: _isRecording ? AppTheme.uideRed : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.uideRed, width: 2),
+                      boxShadow: [
+                        if (_isRecording)
+                          BoxShadow(
+                            color: AppTheme.uideRed.withOpacity(0.4),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                      ],
+                    ),
+                    child: Icon(
+                      _isRecording
+                          ? FontAwesomeIcons.stop
+                          : FontAwesomeIcons.microphone,
+                      color: _isRecording ? Colors.white : AppTheme.uideRed,
+                      size: 32,
+                    ),
                   ),
                 ),
-                child: Center(
-                  child: Icon(
-                    _isRecording
-                        ? FontAwesomeIcons.stop
-                        : FontAwesomeIcons.microphone,
-                    color: _isRecording ? AppTheme.error : Colors.white,
-                    size: 30,
-                  ),
-                ),
-              ),
+
+                if (_audioPath != null && !_isRecording) ...[
+                  const SizedBox(width: 40),
+                  // Play Button
+                  GestureDetector(
+                    onTap: _playRecording,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppTheme.uideGold,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.uideGold.withOpacity(0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _isPlaying
+                            ? FontAwesomeIcons.pause
+                            : FontAwesomeIcons.play,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ).animate().scale(duration: 300.ms),
+                ],
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(_isRecording ? "RECORDING..." : "TAP TO RECORD"),
-
-            const SizedBox(height: 40),
-
-            if (_filePath != null && !_isRecording)
-              ElevatedButton.icon(
-                onPressed: _isPlaying ? _stopPlayback : _playRecording,
-                icon: Icon(_isPlaying ? Icons.stop : Icons.play_arrow),
-                label: Text(_isPlaying ? "STOP PLAYBACK" : "PLAY RECORDING"),
-              ),
           ],
         ),
       ),

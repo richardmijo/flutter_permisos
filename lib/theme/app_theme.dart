@@ -2,52 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Cyberpunk / Modern Dark Palette
-  static const Color background = Color(0xFF0F172A); // Dark Blue-Grey
-  static const Color surface = Color(0xFF1E293B); // Lighter Blue-Grey
-  static const Color primary = Color(0xFF06B6D4); // Neon Cyan
-  static const Color secondary = Color(0xFFEC4899); // Neon Pink
-  static const Color accent = Color(0xFF8B5CF6); // Violet
-  static const Color textPrimary = Color(0xFFF8FAFC);
-  static const Color textSecondary = Color(0xFF94A3B8);
+  // UIDE Palette
+  static const Color uideRed = Color(0xFF98004B);
+  static const Color uideGold = Color(0xFFFDB913);
+
+  static const Color background = Color(0xFFF5F7FA);
+  static const Color surface = Colors.white;
+  static const Color textPrimary = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
+
   static const Color success = Color(0xFF10B981);
   static const Color error = Color(0xFFEF4444);
+  static const Color warning = Color(0xFFF59E0B);
 
-  static ThemeData get darkTheme {
+  static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
+      primaryColor: uideRed,
       scaffoldBackgroundColor: background,
-      primaryColor: primary,
-      colorScheme: const ColorScheme.dark(
-        primary: primary,
-        secondary: secondary,
+      colorScheme: const ColorScheme.light(
+        primary: uideRed,
+        secondary: uideGold,
         surface: surface,
-        background: background,
         error: error,
+        onPrimary: Colors.white,
+        onSecondary: Colors.black,
+        onSurface: textPrimary,
       ),
-      textTheme: GoogleFonts.outfitTextTheme().apply(
+      textTheme: GoogleFonts.poppinsTextTheme().apply(
         bodyColor: textPrimary,
         displayColor: textPrimary,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: background,
+        backgroundColor: uideRed,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.outfit(
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: GoogleFonts.poppins(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: textPrimary,
+          color: Colors.white,
         ),
       ),
-      // cardTheme removed to fix type mismatch
+      cardTheme: CardThemeData(
+        color: surface,
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: background,
-          elevation: 0,
-          textStyle: GoogleFonts.outfit(
-            fontWeight: FontWeight.bold,
+          backgroundColor: uideRed,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          textStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -55,6 +65,10 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: uideGold,
+        foregroundColor: uideRed,
       ),
     );
   }

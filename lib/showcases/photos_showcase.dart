@@ -43,9 +43,9 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
       }
     } catch (e) {
       if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error picking image: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error seleccionando imagen: $e")),
+        );
     }
   }
 
@@ -65,7 +65,7 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
         setState(() => _isLoadingContacts = false);
         if (mounted)
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Contacts permission denied")),
+            const SnackBar(content: Text("Permiso de contactos denegado")),
           );
       }
     } catch (e) {
@@ -73,15 +73,15 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
       if (mounted)
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Error loading contacts: $e")));
+        ).showSnackBar(SnackBar(content: Text("Error cargando contactos: $e")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     String title = widget.mode == PhotoMode.gallery
-        ? 'Photos Showcase'
-        : 'Contacts Showcase';
+        ? 'Galería de Fotos'
+        : 'Lista de Contactos';
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -102,7 +102,14 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
             decoration: BoxDecoration(
               color: AppTheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.uideRed.withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
               image: _selectedImage != null
                   ? DecorationImage(
                       image: FileImage(_selectedImage!),
@@ -122,7 +129,7 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
                         ),
                         SizedBox(height: 16),
                         Text(
-                          "No Image Selected",
+                          "Ninguna imagen seleccionada",
                           style: TextStyle(color: Colors.grey),
                         ),
                       ],
@@ -136,7 +143,8 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
           ElevatedButton.icon(
             onPressed: _pickImage,
             icon: const Icon(Icons.photo_library),
-            label: const Text("SELECT FROM GALLERY"),
+            label: const Text("ABRIR GALERÍA"),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.uideRed),
           ),
         ],
       ),
@@ -159,11 +167,11 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
               color: Colors.grey,
             ),
             const SizedBox(height: 16),
-            const Text("No Contacts Found or Permission Denied"),
+            const Text("No se encontraron contactos o permiso denegado"),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadContacts,
-              child: const Text("RETRY"),
+              child: const Text("REINTENTAR"),
             ),
           ],
         ),
@@ -176,11 +184,11 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
       itemBuilder: (context, index) {
         final contact = _contacts[index];
         return Card(
-          elevation: 2,
+          elevation: 1,
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: AppTheme.primary,
+              backgroundColor: AppTheme.uideRed,
               child: Text(
                 (contact.displayName).isNotEmpty
                     ? contact.displayName[0].toUpperCase()
@@ -198,7 +206,7 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
             subtitle: Text(
               contact.phones.isNotEmpty
                   ? contact.phones.first.number
-                  : "No number",
+                  : "Sin número",
               style: const TextStyle(color: Colors.grey),
             ),
           ),
