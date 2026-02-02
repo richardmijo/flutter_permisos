@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:contacts_service/contacts_service.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_permisos/theme/app_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -52,11 +52,22 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
   Future<void> _loadContacts() async {
     setState(() => _isLoadingContacts = true);
     try {
-      final contacts = await ContactsService.getContacts(withThumbnails: false);
-      setState(() {
-        _contacts = contacts.toList();
-        _isLoadingContacts = false;
-      });
+      if (await FlutterContacts.requestPermission()) {
+        final contacts = await FlutterContacts.getContacts(
+          withProperties: true,
+          withPhoto: false,
+        );
+        setState(() {
+          _contacts = contacts;
+          _isLoadingContacts = false;
+        });
+      } else {
+        setState(() => _isLoadingContacts = false);
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Contacts permission denied")),
+          );
+      }
     } catch (e) {
       setState(() => _isLoadingContacts = false);
       if (mounted)
@@ -171,10 +182,9 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
             leading: CircleAvatar(
               backgroundColor: AppTheme.primary,
               child: Text(
-                (contact.displayName ?? contact.givenName ?? "?")
-                    .characters
-                    .first
-                    .toUpperCase(),
+                (contact.displayName).isNotEmpty
+                    ? contact.displayName[0].toUpperCase()
+                    : "?",
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -182,12 +192,12 @@ class _PhotosShowcaseState extends State<PhotosShowcase> {
               ),
             ),
             title: Text(
-              contact.displayName ?? "Unknown",
+              contact.displayName,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              contact.phones?.isNotEmpty == true
-                  ? contact.phones!.first.value ?? "No number"
+              contact.phones.isNotEmpty
+                  ? contact.phones.first.number
                   : "No number",
               style: const TextStyle(color: Colors.grey),
             ),
